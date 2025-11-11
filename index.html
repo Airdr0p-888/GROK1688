@@ -1,122 +1,25 @@
-<!doctype html>
-<html lang="zh">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>打开 TP 钱包 示例</title>
-  <style>
-    body { font-family: -apple-system, Roboto, "Helvetica Neue", Arial; padding: 24px; line-height:1.6; }
-    .card { max-width:520px; margin:24px auto; padding:18px; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.08); }
-    button { padding:12px 18px; border-radius:10px; border:0; font-size:16px; cursor:pointer; }
-    .hint { font-size:14px; color:#555; margin-top:12px; }
-  </style>
+  <meta charset="utf-8">
+  <title>打开TP钱包</title>
+  <script>
+    // 当页面加载时自动跳转到TP钱包
+    window.onload = function() {
+      // 这里填写你想跳转的TP钱包Scheme
+      var tpLink = "tp://wallet";  // 你可以换成具体的链接，例如交易、打开DApp等
+      
+      // 自动跳转
+      window.location.href = tpLink;
+
+      // 如果未安装TP，可在几秒后跳转备用页面
+      setTimeout(function(){
+        window.location.href = "https://www.tokenpocket.pro"; // 引导下载TP钱包
+      }, 3000);
+    };
+  </script>
 </head>
 <body>
-  <div class="card">
-    <h2>打开钱包示例</h2>
-    <p>页面会尝试打开手机上的钱包应用。若未安装，会跳转到应用商店。</p>
-
-    <div style="margin-top:12px;">
-      <button id="openBtn">打开钱包</button>
-    </div>
-
-    <p class="hint">提示：请替换示例里占位符为真实的 universal link / scheme / 商店链接。</p>
-  </div>
-
-  <script>
-    (function(){
-      const btn = document.getElementById('openBtn');
-
-      // --- 替换下面这些占位符为真实值 ---
-      const UNIVERSAL_LINK = "https://example.com/open/tokenpocket"; // 如果有 universal link（域名已和 App 关联）
-      const SCHEME_URL = "tokenpocket://transfer?address=0x123";     // 自定义 scheme（应用支持的）
-      const ANDROID_INTENT = "intent://open#Intent;scheme=tokenpocket;package=com.tokenpocket.app;end";
-      const APPSTORE_URL = "https://apps.apple.com/app/idPLACEHOLDER"; // iOS App Store
-      const PLAYSTORE_URL = "https://play.google.com/store/apps/details?id=com.tokenpocket.app"; // Google Play
-      // ------------------------------------
-
-      // 检测平台
-      const ua = navigator.userAgent || "";
-      const isAndroid = /Android/i.test(ua);
-      const isIOS = /iPhone|iPad|iPod/i.test(ua);
-
-      function openWithUniversalLink() {
-        // 直接把 location 指向 universal link，若已在设备上并配置，会打开 app
-        window.location.href = UNIVERSAL_LINK;
-      }
-
-      function openWithScheme() {
-        window.location.href = SCHEME_URL;
-      }
-
-      function openWithIntent() {
-        // Android 专用：尝试 intent 方案（更可靠地跳转到指定包）
-        window.location.href = ANDROID_INTENT;
-      }
-
-      function openStore() {
-        // 跳转到对应商店（按平台）
-        if (isIOS) {
-          window.location.href = APPSTORE_URL;
-        } else if (isAndroid) {
-          window.location.href = PLAYSTORE_URL;
-        } else {
-          // 桌面或未知：显示提示
-          alert("未检测到移动设备或无法打开应用。请在手机上打开本页并手动安装/打开钱包。");
-        }
-      }
-
-      function tryOpenApp() {
-        // 多方式尝试：先 universal link -> 等待 -> scheme/intent -> 等待 -> 商店
-        const start = Date.now();
-        // 记录页面是否隐藏（用户被带走即认为成功）
-        let hiddenTriggered = false;
-
-        function onVisibility() {
-          hiddenTriggered = true;
-        }
-        document.addEventListener("visibilitychange", onVisibility);
-
-        // 1) 如果有 universal link，优先尝试（需要你的域名与 app 配置关联）
-        if (UNIVERSAL_LINK && UNIVERSAL_LINK.indexOf("https://") === 0) {
-          try { openWithUniversalLink(); } catch(e) {}
-        } else {
-          // 如果没有 universal link，先尝试 scheme/intent
-          if (isAndroid) {
-            try { openWithIntent(); } catch(e) {}
-          } else {
-            try { openWithScheme(); } catch(e) {}
-          }
-        }
-
-        // fallback 计时：若在短时间内页面仍可见，说明跳转失败（未安装或被阻止），则尝试下一步
-        setTimeout(function(){
-          if (hiddenTriggered) return; // 成功了（切换到 App）
-          // 如果刚用了 universal link，但它没打开 app，那我们再尝试 scheme/intent
-          if (isAndroid) {
-            try { openWithIntent(); } catch(e) {}
-          } else {
-            try { openWithScheme(); } catch(e) {}
-          }
-        }, 1200);
-
-        // 最终 fallback -> 商店（再等一段时间）
-        setTimeout(function(){
-          if (hiddenTriggered) return;
-          // 再次检查时间差（避免误判）
-          if (Date.now() - start < 4000) {
-            openStore();
-          }
-        }, 2400);
-      }
-
-      // 自动尝试：这里我们不在页面加载时就强制执行，因为某些浏览器/策略限制无交互跳转。
-      // 你可以取消注释下一行在页面 load 时自动尝试：
-      // window.addEventListener('load', tryOpenApp);
-
-      // 按钮触发
-      btn.addEventListener('click', tryOpenApp);
-    })();
-  </script>
+  <h2>正在尝试打开 TP 钱包...</h2>
 </body>
 </html>
